@@ -92,7 +92,11 @@ class NewsSourcesVocabulary(object):
     def __call__(self, context):
         site = getSite()
         catalog = getToolByName(site, 'portal_catalog')
-        collections = catalog(object_provides=[IATTopic.__identifier__,ICollection.__identifier__],
+        if self.isPlone42():
+            collections = catalog(object_provides=[IATTopic.__identifier__,ICollection.__identifier__],
+                              sort_on='getObjPositionInParent')
+        else:
+            collections = catalog(object_provides=IATTopic.__identifier__,
                               sort_on='getObjPositionInParent')
 
         items = []
@@ -101,6 +105,16 @@ class NewsSourcesVocabulary(object):
             title = collection.Title
             items.append(SimpleVocabulary.createTerm(path, path, title))
         return SimpleVocabulary(items)
+
+    def isPlone42(self):
+        
+        try:
+            site = getSite()
+            migrationTool = getToolByName(site, 'portal_migration')
+            versions = migrationTool.coreVersions()['Plone'].split('.')
+            return versions[0]=='4' and versions[1]=='2'
+        except:
+            return False
 
 grok.global_utility(NewsSourcesVocabulary,
                     name=u'collective.newsticker.NewsSources')
